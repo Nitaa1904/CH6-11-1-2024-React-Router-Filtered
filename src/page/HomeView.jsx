@@ -3,67 +3,84 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 
 const HomeView = () => {
-  // store data secara state reactnya
   const [shops, setShops] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterTerm, setFilterTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+  const [totalPages, setTotalPages] = useState(1);
+  const maxPaginationButtons = 5; // Limit number of pagination buttons
 
-  // fetch data
   useEffect(() => {
     const fetchShops = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("http://localhost:3000/api/v1/shops");
+        const response = await axios.get("http://localhost:3000/api/v1/shops", {
+          params: {
+            page: currentPage,
+            size: pageSize,
+            productName: filterTerm, // Filter by product name instead of shop name
+          },
+        });
 
-        // Handle API response shops
         const data = response.data;
-        // buat error handling
         if (data.isSuccess) {
           setShops(data.data.shops);
+          setTotalPages(data.data.pagination.totalPages);
         } else {
           setError("Error fetching shops");
         }
       } catch (error) {
         setError(error.message);
       } finally {
-        setLoading(false); // Update setLoading to false
+        setLoading(false);
       }
     };
     fetchShops();
-    // tambah dependensi array kosong agar tidak terjadi infinit looping
-  }, []);
+  }, [currentPage, pageSize, filterTerm]);
 
-  // Filtered list of shops based on filter term
-  const filteredShops = shops.filter((shop) =>
-    shop.products[0].name.toLowerCase().includes(filterTerm.toLowerCase())
-  );
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    setFilterTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  // Calculate pagination range to display
+  const getPaginationRange = () => {
+    const start = Math.max(
+      1,
+      currentPage - Math.floor(maxPaginationButtons / 2)
+    );
+    const end = Math.min(totalPages, start + maxPaginationButtons - 1);
+    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+  };
 
   return (
     <div className="bg-gray-50">
       <header className="flex justify-between p-4 bg-white shadow-md">
         <div className="flex items-center space-x-4">
           <h1 className="text-lg font-bold text-blue-800">Binar Car Rental</h1>
-
           <nav className="hidden md:flex space-x-4">
             <a href="#" className="text-gray-700">
               Our Services
             </a>
-
             <a href="#" className="text-gray-700">
               Why Us
             </a>
-
             <a href="#" className="text-gray-700">
               Testimonial
             </a>
-
             <a href="#" className="text-gray-700">
               FAQ
             </a>
           </nav>
         </div>
-
         <Link to="/register">
           <button className="px-4 py-2 text-white bg-green-500 rounded-md">
             Register
@@ -74,22 +91,18 @@ const HomeView = () => {
       <main className="text-center">
         {loading && <p>Loading...</p>}
         {error && <p className="text-red-500">{error}</p>}
-
-        {/* Filter Input */}
         <div className="mt-4">
           <input
             type="text"
             placeholder="Filter by car name"
             value={filterTerm}
-            onChange={(e) => setFilterTerm(e.target.value)}
+            onChange={handleFilterChange}
             className="p-2 border border-gray-300 rounded-md"
           />
         </div>
-
-        {/* Display filtered shops */}
         {!loading && !error && (
           <section className="max-w-6xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredShops.map((shop, index) => (
+            {shops.map((shop, index) => (
               <div
                 key={index}
                 className="p-4 border rounded-md bg-white shadow-md"
@@ -115,10 +128,42 @@ const HomeView = () => {
                 </button>
               </div>
             ))}
-            {filteredShops.length === 0 && (
+            {shops.length === 0 && (
               <p className="text-gray-600 mt-8">No shops match the filter.</p>
             )}
           </section>
+        )}
+
+        {!loading && !error && totalPages > 1 && (
+          <div className="flex justify-center mt-8 space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-gray-200 rounded-md disabled:opacity-50"
+            >
+              Prev
+            </button>
+            {getPaginationRange().map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === page
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-gray-200 rounded-md disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         )}
       </main>
     </div>
