@@ -10,7 +10,7 @@ const HomeView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
   const [totalPages, setTotalPages] = useState(1);
-  const maxPaginationButtons = 5; // Limit number of pagination buttons
+  const maxPaginationButtons = 5;
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -20,7 +20,7 @@ const HomeView = () => {
           params: {
             page: currentPage,
             size: pageSize,
-            productName: filterTerm, // Filter by product name instead of shop name
+            productName: filterTerm,
           },
         });
 
@@ -51,7 +51,6 @@ const HomeView = () => {
     setCurrentPage(1);
   };
 
-  // Calculate pagination range to display
   const getPaginationRange = () => {
     const start = Math.max(
       1,
