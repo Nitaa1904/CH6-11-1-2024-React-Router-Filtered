@@ -1,9 +1,6 @@
 function Button(props) {
   const { children = "click me", onSelect = () => {} } = props;
-  return (
-    <li>
-      <button onClick={onSelect}>{children}</button>
-    </li>
-  );
+  return <button onClick={onSelect}>{children}</button>;
 }
+
 export default Button;
